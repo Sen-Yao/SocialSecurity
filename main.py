@@ -1,9 +1,14 @@
 import argparse
+import os.path
+
 import torch
 import time
 
 import preprocess
 import net
+
+VALID_SET = 2000
+TEST_SET = 500
 
 
 def main():
@@ -33,7 +38,8 @@ def main():
     t1 = time.time()
     t2 = t1
     try:
-        predict_net.net = torch.load('model\\model.pkl')
+        predict_net.net = torch.load(os.path.join('model', "model.pkl"))
+        predict_net.trainer = torch.optim.Adam(predict_net.net.parameters(), lr=predict_net.learning_rate)
     except FileNotFoundError:
         print('File Not Found')
     predict_net.net.train()
@@ -47,7 +53,7 @@ def main():
         predict_net.Update(pred_y, batch_y)
         if time.time()-t2 > 5:
             print('saved')
-            torch.save(predict_net.net, 'model\\model.pkl')
+            torch.save(predict_net.net, os.path.join('model', "model.pkl"))
             t2 = time.time()
         elif time.time()-t1 > 1:
             print('loss=', predict_net.loss.item())
