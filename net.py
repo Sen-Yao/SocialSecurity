@@ -13,23 +13,23 @@ class ConsumePredictNet:
         self.net = nn.Sequential(
             nn.Linear(16, 256), nn.ReLU(),
             nn.Linear(256, 1024), nn.ReLU(),
+            nn.Dropout(p=0.2),
             nn.Linear(1024, 4096), nn.ReLU(),
-            nn.Linear(4096, 8192), nn.ReLU(),
-            nn.Linear(8192, 8192), nn.ReLU(),
-            nn.Linear(8192, 8192), nn.ReLU(),
-            nn.Linear(8192, 4096), nn.ReLU(),
+            nn.Dropout(p=0.2),
+            nn.Linear(4096, 4096), nn.ReLU(),
+            nn.Linear(4096, 4096), nn.ReLU(),
+            nn.Linear(4096, 4096), nn.ReLU(),
             nn.Linear(4096, 4096), nn.ReLU(),
             nn.Linear(4096, 1024), nn.ReLU(),
-            nn.Linear(1024, 1024), nn.ReLU(),
             nn.Linear(1024, 256), nn.ReLU(),
             nn.Linear(256, 1),
         )
         self.net.to(try_gpu())
         self.InitNet()
-        self.loss_function = nn.MSELoss()
         self.learning_rate = float(lr)
         self.trainer = torch.optim.Adam(self.net.parameters(), lr=self.learning_rate)
         self.loss = None
+        self.lambda_reg = 0.01
 
     def InitNet(self):
         # Initial net
@@ -44,3 +44,11 @@ class ConsumePredictNet:
         self.trainer.zero_grad()
         loss.backward()
         self.trainer.step()
+
+    def loss_function(self, y_true, y_pred):
+        mse_loss = nn.MSELoss()
+        mse = mse_loss(y_true, y_pred)
+        l2_regularization = torch.tensor(0.0).to(try_gpu())
+        for param in self.net.parameters():
+            l2_regularization += torch.norm(param, p=2)
+        return mse + self.lambda_reg * l2_regularization
