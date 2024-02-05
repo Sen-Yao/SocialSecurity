@@ -11,18 +11,16 @@ def try_gpu(i=0):  # @save
 class ConsumePredictNet:
     def __init__(self, lr):
         self.net = nn.Sequential(
-            nn.Linear(16, 256), nn.ReLU(),
+            nn.Linear(15, 32), nn.ReLU(),
+            nn.Linear(32, 256), nn.ReLU(),
             nn.Linear(256, 1024), nn.ReLU(),
-            nn.Dropout(p=0.2),
-            nn.Linear(1024, 4096), nn.ReLU(),
-            nn.Dropout(p=0.2),
-            nn.Linear(4096, 4096), nn.ReLU(),
-            nn.Linear(4096, 4096), nn.ReLU(),
-            nn.Linear(4096, 4096), nn.ReLU(),
-            nn.Linear(4096, 4096), nn.ReLU(),
-            nn.Linear(4096, 1024), nn.ReLU(),
+            nn.Linear(1024, 1024), nn.ReLU(),
+            nn.Linear(1024, 1024), nn.ReLU(),
             nn.Linear(1024, 256), nn.ReLU(),
-            nn.Linear(256, 1),
+            nn.Linear(256, 16), nn.ReLU(),
+            nn.Linear(16, 8), nn.ReLU(),
+            nn.Linear(8, 2), nn.ReLU(),
+            nn.Linear(2, 1),
         )
         self.net.to(try_gpu())
         self.InitNet()
@@ -51,4 +49,5 @@ class ConsumePredictNet:
         l2_regularization = torch.tensor(0.0).to(try_gpu())
         for param in self.net.parameters():
             l2_regularization += torch.norm(param, p=2)
-        return mse + self.lambda_reg * l2_regularization
+        return mse
+        # return mse + self.lambda_reg * l2_regularization
