@@ -63,7 +63,7 @@ def main():
         # batch_y += 0.1 * torch.rand_like(batch_y)
         pred_y = predict_net(batch_x)
         predict_net.Update(pred_y, batch_y)
-        if time.time()-t2 > 30 and int(args.epoch) > 10000:
+        if time.time()-t2 > 3000 and int(args.epoch) > 10000:
             print('saved')
             torch.save(predict_net, os.path.join('model', "model.pkl"))
             t2 = time.time()

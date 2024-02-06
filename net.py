@@ -12,20 +12,25 @@ class ConsumePredictNet(nn.Module):
     def __init__(self, lr, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.layer1 = nn.Sequential(
-            nn.Linear(15, 32), nn.Sigmoid(),
-            nn.Linear(32, 128), nn.Sigmoid(),
-            nn.Linear(128, 128), nn.Sigmoid(),
+            nn.Linear(15, 32), nn.ReLU(),
+            nn.Linear(32, 128), nn.ReLU(),
+            nn.Linear(128, 128), nn.ReLU(),
+            nn.Linear(128, 512), nn.ReLU(),
+            nn.Linear(512, 2048), nn.ReLU(),
+            nn.Linear(2048, 8192), nn.ReLU(),
         )
         self.layer2 = nn.Sequential(
-            nn.Linear(128, 256), nn.Sigmoid(),
-            nn.Linear(256, 128), nn.Sigmoid(),
+            nn.Linear(8192, 8192), nn.ReLU(),
+            nn.Linear(8192, 8192), nn.ReLU()
         )
         self.layer3 = nn.Sequential(
-            nn.Linear(128, 256), nn.Sigmoid(),
-            nn.Linear(256, 128), nn.Sigmoid(),
-            nn.Linear(128, 16), nn.Sigmoid(),
-            nn.Linear(16, 4), nn.Sigmoid(),
-            nn.Linear(4, 1)
+            nn.Linear(8192, 2048), nn.ReLU(),
+            nn.Linear(2048, 512), nn.ReLU(),
+            nn.Linear(512, 128), nn.ReLU(),
+            nn.Linear(128, 128), nn.ReLU(),
+            nn.Linear(128, 64), nn.ReLU(),
+            nn.Linear(64, 8), nn.ReLU(),
+            nn.Linear(8, 1)
         )
         self.to(try_gpu())
         self.InitNet()
@@ -48,7 +53,7 @@ class ConsumePredictNet(nn.Module):
         # Initial net
         def init_weights(m):
             if type(m) == nn.Linear:
-                nn.init.normal_(m.weight, std=0.01)
+                nn.init.normal_(m.weight, std=0.06)
         self.apply(init_weights)
 
     def Update(self, predict_y, batch_y):
@@ -60,7 +65,7 @@ class ConsumePredictNet(nn.Module):
 
 
     def loss_function(self, y_true, y_pred):
-        mse_loss = nn.MSELoss()
+        mse_loss = nn.HuberLoss()
         mse = mse_loss(y_true, y_pred)
         l2_regularization = torch.tensor(0.0).to(try_gpu())
         for param in self.parameters():
