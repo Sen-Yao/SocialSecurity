@@ -2,8 +2,6 @@ import csv
 import numpy as np
 import random
 
-import torch
-
 
 def read_csv_to_dict_list(file_path):
     with open(file_path, mode='r', encoding='utf-8') as file:
