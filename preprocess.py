@@ -1,6 +1,7 @@
 import csv
 import numpy as np
 import random
+from torch.utils import data
 
 
 def read_csv_to_dict_list(file_path):
@@ -9,7 +10,8 @@ def read_csv_to_dict_list(file_path):
         dict_list = [row for row in csv_reader]
         rand_list = dict_list.copy()
         random.shuffle(rand_list)
-    return rand_list
+        city_code_index = get_city_codes_index(rand_list)
+    return rand_list, city_code_index
 
 
 def clean_invalid_line(input_list):
@@ -23,21 +25,14 @@ def clean_invalid_line(input_list):
                 input_list.remove(line)
 
 
-def get_batch(X, Y, batch_size):
-    assert len(X) == len(Y), "X and Y must have the same length"
-    while True:
-        yield np.stack(random.sample(X, batch_size)), np.stack(random.sample(Y, batch_size))
-
-    num_samples = len(X)
-    num_batches = num_samples // batch_size
-
-    while True:
-        batch_idx = random.randint(0, num_batches-1)
-        start_idx = batch_idx * batch_size
-        end_idx = (batch_idx + 1) * batch_size
-
-        batch_X = X[start_idx:end_idx]
-        batch_Y = Y[start_idx:end_idx]
-        yield np.stack(batch_X), np.stack(batch_Y)
+def get_city_codes_index(input_list):
+    city_codes = [int(line['citycode2']) for line in input_list]
+    unique_city_codes = list(set(city_codes))
+    city_code_to_index = {code: i for i, code in enumerate(unique_city_codes)}
+    return city_code_to_index
 
 
+def load_array(data_arrays, batch_size, is_train=True):  #@save
+    """构造一个PyTorch数据迭代器"""
+    dataset = data.TensorDataset(*data_arrays)
+    return data.DataLoader(dataset, batch_size, shuffle=is_train)
