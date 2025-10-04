@@ -5,15 +5,20 @@ import os
 
 # 假设 XGBoostConsumePredictNet 类定义在名为 xgb_model.py 的文件中
 from models.xgb_model import XGBoostConsumePredictNet
+from models.ridge_model import RidgeConsumePredictNet
 
 # --- 你的其他代码，比如 preprocess.py ---
 
 def main():
     parser = argparse.ArgumentParser(description="A script with command line arguments.")
+    parser.add_argument("--model_type", default="xgboost", choices=["xgboost", "ridge"], help="Type of model to use")
     parser.add_argument("--raw_data_path", "-p", help="Input file path", default="data/mydata.csv")
     parser.add_argument("--n_estimators", default=1000, type=int, help="Number of boosting rounds")
     parser.add_argument("--max_depth", default=4, type=int, help="Max tree depth")
     parser.add_argument("--learning_rate", "-lr", default=0.05, type=float, help="learning rate")
+
+    # Ridge
+    parser.add_argument("--alpha", default=1.0, type=float, help="Regularization strength for Ridge")
 
     args = parser.parse_args()
 
@@ -24,6 +29,7 @@ def main():
 
     # 清洗数据 (用你自己的逻辑)
     # preprocess.clean_invalid_line(df) # 你需要让你的清洗函数支持DataFrame
+    df = df.fillna(df.mean())  # 用均值填充
 
     # 使用One-Hot Encoding处理 citycode2
     df = pd.get_dummies(df, columns=['citycode2'], prefix='city')
@@ -46,12 +52,18 @@ def main():
 
     # 模型训练
     # 初始化模型，传入相关超参数
-    xgb_params = {
-        'n_estimators': args.n_estimators,
-        'max_depth': args.max_depth,
-        'learning_rate': args.learning_rate,
-    }
-    predict_net = XGBoostConsumePredictNet(**xgb_params)
+    if args.model_type == 'xgboost':
+        model_params = {
+            'n_estimators': args.n_estimators,
+            'max_depth': args.max_depth,
+            'learning_rate': args.learning_rate,
+        }
+        predict_net = XGBoostConsumePredictNet(**model_params)
+    elif args.model_type == 'ridge':
+        model_params = {
+            'alpha': args.alpha
+        }
+        predict_net = RidgeConsumePredictNet(**model_params)
 
     # **核心改动：训练过程极其简单**
     # 整个训练循环被这一行替换了！
