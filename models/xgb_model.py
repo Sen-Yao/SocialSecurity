@@ -81,7 +81,7 @@ class XGBoostConsumePredictNet:
 
         return self.model.predict(x)
 
-    def save_model(self, directory='model', filename='xgb_model.json'):
+    def save_model(self, directory='pretrain', filename='xgb_model.json'):
         """
         保存模型。XGBoost有自己的模型保存格式。
         """
@@ -92,7 +92,7 @@ class XGBoostConsumePredictNet:
         print(f"Model saved to {path}")
 
     @classmethod
-    def load_model(cls, directory='model', filename='xgb_model.json'):
+    def load_model(cls, directory='pretrain', filename='xgb_model.json'):
         """
         加载模型。这是一个类方法，可以直接通过类名调用。
         """
