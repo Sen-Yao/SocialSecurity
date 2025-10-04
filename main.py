@@ -2,6 +2,7 @@ import argparse
 import pandas as pd
 import numpy as np
 import os
+import wandb
 
 # 假设 XGBoostConsumePredictNet 类定义在名为 xgb_model.py 的文件中
 from models.xgb_model import XGBoostConsumePredictNet
@@ -9,18 +10,7 @@ from models.ridge_model import RidgeConsumePredictNet
 
 from shap_analyzer import SHAPAnalyzer 
 
-def main():
-    parser = argparse.ArgumentParser(description="A script with command line arguments.")
-    parser.add_argument("--model_type", default="xgboost", choices=["xgboost", "ridge"], help="Type of model to use")
-    parser.add_argument("--raw_data_path", "-p", help="Input file path", default="data/mydata.csv")
-    parser.add_argument("--n_estimators", default=1000, type=int, help="Number of boosting rounds")
-    parser.add_argument("--max_depth", default=4, type=int, help="Max tree depth")
-    parser.add_argument("--learning_rate", "-lr", default=0.05, type=float, help="learning rate")
-
-    # Ridge
-    parser.add_argument("--alpha", default=1.0, type=float, help="Regularization strength for Ridge")
-
-    args = parser.parse_args()
+def main(args):
 
     print("Loading and preprocessing data...")
     df = pd.read_csv(args.raw_data_path)
@@ -85,8 +75,9 @@ def main():
         bias = pred_y - origin_y
         total_bias += abs(bias)
         # print(f'原始数据为{origin_y:.4f}, 模型输出为{pred_y:.4f}, 偏差为{bias:.4f}')
-
-    print(f"\n测试集平均绝对误差 (MAE): {total_bias / len(test_x):.4f}")
+    test_MAE = total_bias / len(test_x)
+    print(f"\n测试集平均绝对误差 (MAE): {test_MAE}")
+    wandb.log({"test_MAE": test_MAE})
 
     # SHAP 分析
     if args.model_type == 'xgboost':
@@ -106,9 +97,9 @@ def main():
             # 生成并显示全局特征重要性图 (蜜蜂图)
             # 这是最有价值的图之一
             analyzer.plot_summary(plot_type='dot')
-            
+
             # 你也可以看看传统的条形图
-            # analyzer.plot_summary(plot_type='bar')
+            analyzer.plot_summary(plot_type='bar')
 
             # --- 探索你最关心的特征 ---
             # 探索核心变量 'ifsocial' 的影响
@@ -117,13 +108,33 @@ def main():
 
             # 探索工资 'ln_wage' 的影响，并观察它是否与年龄 'age' 有交互作用
             analyzer.plot_dependence('ln_wage', interaction_feature='age')
-            
+
             # 解释第一条训练数据的预测过程
             analyzer.explain_single_prediction(index=0)
+
+            print("\n所有SHAP可视化已记录到wandb，请在wandb面板中查看。")
 
         else:
             print("错误: 'predict_net' 对象没有找到 'model' 属性。无法进行SHAP分析。")
             print("请确保在你的模型类中将训练好的模型保存在 self.model 中。")
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="A script with command line arguments.")
+    parser.add_argument("--model_type", default="xgboost", choices=["xgboost", "ridge"], help="Type of model to use")
+    parser.add_argument("--raw_data_path", "-p", help="Input file path", default="data/mydata.csv")
+    parser.add_argument("--n_estimators", default=1000, type=int, help="Number of boosting rounds")
+    parser.add_argument("--max_depth", default=4, type=int, help="Max tree depth")
+    parser.add_argument("--learning_rate", "-lr", default=0.05, type=float, help="learning rate")
+
+    # Ridge
+    parser.add_argument("--alpha", default=1.0, type=float, help="Regularization strength for Ridge")
+
+    args = parser.parse_args()
+    run = wandb.init(
+        entity="HCCS",
+        # Set the wandb project where this run will be logged.
+        project="SocialSecurity",
+        # Track hyperparameters and run metadata.
+        config=args,
+    )
+    main(args)
