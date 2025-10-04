@@ -6,3 +6,4 @@ matplotlib
 tqdm
 xgboost
 wandb
+shap
